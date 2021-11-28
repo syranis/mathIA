@@ -38,7 +38,6 @@ for stateStart in range(5):
                 start += 1
                 if states[i + 1] == stateEnd:
                     end += 1
-        # print(f'{stateStart} to {stateEnd}: {end} / {start} = {round(end / start, 3)}')
         transitionStates[stateStart, stateEnd] = round(end / start, 3)
 
 print(transitionStates)
