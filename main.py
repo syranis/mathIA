@@ -1,4 +1,5 @@
 import math
+import numpy as np
 import requests
 
 # api for https://www.wunderground.com/history/monthly/KLGA/date/2020-10
@@ -15,11 +16,20 @@ for datapoint in r['observations']:
         temps.append(int(datapoint['max_temp']))
 
 
-# here the max temperature from each day is converted into a state, where 0 is 45-49 fahrenheit, 1 is 50-54, etc.
+# here the max temperature from each day is converted into a state, where 0 is 45F-49F, 1 is 50-54, etc.
 state = []
 for i in range(len(temps)):
     state.append(math.floor(temps[i] / 5) - 9)
 
-for i in range(len(state)):
-    print(f'{i} | {state[i]}')
+# for i in range(len(state)):
+#     print(f'{i} | {state[i]}')
 
+transitionStates = np.array(range(0, 49)).reshape((7, 7))
+
+print(state)
+print(transitionStates)
+
+# determine the probabilities of going from one state to the next
+for i in range(len(state)):
+    for start in range(7):
+        continue
