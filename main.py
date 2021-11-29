@@ -61,7 +61,7 @@ while True:
     distribution = np.dot(distribution, transitionMatrix)
     stateHist = np.append(stateHist, distribution, axis=0)
     dfDistrHist = pd.DataFrame(stateHist)
-dfDistrHist.plot()
+dfDistrHist.plot(title='Stationary Distribution')
 plt.show()
 
 # The following simulates the markov chain.
@@ -89,7 +89,7 @@ def simulate_multinomial(vmultinomial):
     return nextState
 
 
-for x in range(10000):
+for x in range(50000):
     currentRow = np.ma.masked_values((transitionMatrix[currentState]), 0.0)
     nextState = simulate_multinomial(currentRow)
     # Keep track of state changes
@@ -111,7 +111,7 @@ print(f'Distribution of temperatures:\n{distrib}\n')
 
 P_hat = stateChangeHist / stateChangeHist.sum(axis=1)[:, None]
 # Check estimated state transition probabilities based on history so far:
-print(f'Reconstructed transition matrix:\n{P_hat}\n')
+print(f'Reconstructed transition matrix after 50 000 iterations:\n{P_hat}\n')
 dfDistrHist = pd.DataFrame(distr_hist)
 # Plot the distribution as the simulation progresses over time
 dfDistrHist.plot(title="Simulation History")
