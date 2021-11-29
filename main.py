@@ -29,8 +29,8 @@ transitionStates = np.array(np.arange(matrixSize ** 2), dtype=float).reshape(mat
 # for each combination of starting state and ending state,
 # calculate the percentage of times that the starting state leads to the ending state
 # update the corresponding value in the transitionStates array
-for stateStart in range(5):
-    for stateEnd in range(5):
+for stateStart in range(matrixSize):
+    for stateEnd in range(matrixSize):
         start = 0
         end = 0
         for i in range(len(states) - 1):
@@ -38,6 +38,6 @@ for stateStart in range(5):
                 start += 1
                 if states[i + 1] == stateEnd:
                     end += 1
-        transitionStates[stateStart, stateEnd] = round(end / start, 3)
+        transitionStates[stateStart, stateEnd] = end / start
 
 print(transitionStates)
