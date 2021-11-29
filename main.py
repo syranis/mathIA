@@ -50,7 +50,6 @@ print(f'The transition matrix is:\n{transitionMatrix}')
 distribution = np.array([[1.0, 0.0, 0.0, 0.0, 0.0]])
 stateHist = distribution
 dfStateHist = pd.DataFrame(distribution)
-distr_hist = [[0, 0, 0]]
 count = 0
 while True:
     if (distribution == np.dot(distribution, transitionMatrix)).all():
