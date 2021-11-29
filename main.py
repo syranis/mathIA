@@ -47,18 +47,18 @@ print(f'The transition matrix is:\n{transitionMatrix}')
 # transition matrix returns a vector which can be iteratively multiplied against the transition matrix to reach an
 # equilibrium state.
 # Once two consecutive stationary distributions are equal, the stationary distribution has been calculated.
-stationaryDistribution = np.array([[1.0, 0.0, 0.0, 0.0, 0.0]])
-stateHist = stationaryDistribution
-dfStateHist = pd.DataFrame(stationaryDistribution)
+distribution = np.array([[1.0, 0.0, 0.0, 0.0, 0.0]])
+stateHist = distribution
+dfStateHist = pd.DataFrame(distribution)
 distr_hist = [[0, 0, 0]]
 count = 0
 while True:
-    if (stationaryDistribution == np.dot(stationaryDistribution, transitionMatrix)).all():
-        print(f'Stationary distribution reached at {count} iterations:\n{stationaryDistribution}')
+    if (distribution == np.dot(distribution, transitionMatrix)).all():
+        print(f'Stationary distribution reached at {count} iterations:\n{distribution}')
         break
     count += 1
-    stationaryDistribution = np.dot(stationaryDistribution, transitionMatrix)
-    stateHist = np.append(stateHist, stationaryDistribution, axis=0)
+    distribution = np.dot(distribution, transitionMatrix)
+    stateHist = np.append(stateHist, distribution, axis=0)
     dfDistrHist = pd.DataFrame(stateHist)
     dfDistrHist.plot()
 plt.show()
