@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from random import seed
+from random import random
 import requests
 import matplotlib.pyplot as plt
 
@@ -39,7 +41,7 @@ for stateStart in range(matrixSize):
                     end += 1
         transitionMatrix[stateStart, stateEnd] = end / start
 
-print(f'The transition matrix is:\n{transitionMatrix}')
+print(f'The transition matrix is:\n{transitionMatrix}\n')
 
 # The following finds the stationary distribution of the markov chain.
 # The stationary distribution is found here by raising the transition matrix to the power of number of iterations.
@@ -59,7 +61,58 @@ while True:
     distribution = np.dot(distribution, transitionMatrix)
     stateHist = np.append(stateHist, distribution, axis=0)
     dfDistrHist = pd.DataFrame(stateHist)
-    dfDistrHist.plot()
+dfDistrHist.plot()
 plt.show()
 
 # The following simulates the markov chain.
+# By dividing a line segment into intervals proportional to the probabilities in the transition matrix and then
+# generating a uniform random number between 0 and 1, an interval can be chosen.
+# Doing this is a good way to simulate a multinomial distribution and can be applied to markov chains as the collection
+# of moves from any given state form a multinomial distribution.
+stateChangeHist = np.array(np.arange(matrixSize ** 2), dtype=float).reshape(matrixSize, matrixSize)
+stateChangeHist[stateChangeHist > 0.0] = 0.0
+state = np.array([[1.0, 0.0, 0.0, 0.0, 0.0]])
+currentState = 0
+stateHist = state
+dfStateHist = pd.DataFrame(state)
+
+distr_hist = [[0, 0, 0, 0, 0]]
+seed(4)
+
+
+def simulate_multinomial(vmultinomial):
+    r = np.random.uniform(0.0, 1.0)
+    CS = np.cumsum(vmultinomial)
+    CS = np.insert(CS, 0, 0)
+    m = (np.where(CS < r))[0]
+    nextState = m[len(m) - 1]
+    return nextState
+
+
+for x in range(10000):
+    currentRow = np.ma.masked_values((transitionMatrix[currentState]), 0.0)
+    nextState = simulate_multinomial(currentRow)
+    # Keep track of state changes
+    stateChangeHist[currentState, nextState] += 1
+    # Keep track of the state vector itself
+    state = np.array([[0, 0, 0, 0, 0]])
+    state[0, nextState] = 1.0
+    # Keep track of state history
+    stateHist = np.append(stateHist, state, axis=0)
+    currentState = nextState
+    # calculate the actual distribution over the 3 states so far
+    totals = np.sum(stateHist, axis=0)
+    gt = np.sum(totals)
+    # distrib = totals / gt
+    distrib = np.reshape(totals / gt, (1, 5))
+    distr_hist = np.append(distr_hist, distrib, axis=0)
+
+print(f'Distribution of temperatures:\n{distrib}\n')
+
+P_hat = stateChangeHist / stateChangeHist.sum(axis=1)[:, None]
+# Check estimated state transition probabilities based on history so far:
+print(f'Reconstructed transition matrix:\n{P_hat}\n')
+dfDistrHist = pd.DataFrame(distr_hist)
+# Plot the distribution as the simulation progresses over time
+dfDistrHist.plot(title="Simulation History")
+plt.show()
