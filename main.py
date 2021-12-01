@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from random import seed
-from random import random
 import requests
 import matplotlib.pyplot as plt
 
@@ -100,10 +99,9 @@ for x in range(50000):
     # Keep track of state history
     stateHist = np.append(stateHist, state, axis=0)
     currentState = nextState
-    # calculate the actual distribution over the 3 states so far
+    # calculate the actual distribution over the 5 states so far
     totals = np.sum(stateHist, axis=0)
     gt = np.sum(totals)
-    # distrib = totals / gt
     distrib = np.reshape(totals / gt, (1, 5))
     distr_hist = np.append(distr_hist, distrib, axis=0)
 
