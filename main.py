@@ -104,7 +104,6 @@ for x in range(50000):
     gt = np.sum(totals)
     distrib = np.reshape(totals / gt, (1, 5))
     distr_hist = np.append(distr_hist, distrib, axis=0)
-
 print(f'Distribution of temperatures:\n{distrib}\n')
 
 P_hat = stateChangeHist / stateChangeHist.sum(axis=1)[:, None]
