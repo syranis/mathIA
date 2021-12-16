@@ -122,7 +122,7 @@ def simulate(transitions):
 def month(transitions, states):
     # Simulate a month of weather from a starting temperature, in this case 69 to simulate October 2021
     month_states = []
-    current_state = 70 // 5 - 11
+    current_state = states[0]
     state = np.array([[0.0, 0.0, 0.0, 0.0, 0.0]])
     month_states.append(current_state)
     state[0, current_state] = 1.0
@@ -148,7 +148,7 @@ def main():
     transitions = transition_matrix(states)
 
     # Calculate stationary distribution and simulate the chain 50 000 times
-    stationary_distribution(transition_matrix)
+    stationary_distribution(transitions)
     simulate(transitions)
 
     # Find the average accuracy for October 2020 over 100 iterations
