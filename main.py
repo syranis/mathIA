@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 
 
 def get_data(link):
-    # Data from the api endpoint of https://www.wunderground.com/history/monthly/KLGA/date/2020-10 is being used
-    # The data has 923 weather data points from LaGuardia airport in NYC over the month of October 2020 under JSON format
     url = link
     r = requests.get(url=url).json()
 
@@ -27,22 +25,21 @@ def get_data(link):
 
 def simulate_multinomial(vmultinomial):
     r = np.random.uniform(0.0, 1.0)
-    CS = np.cumsum(vmultinomial)
-    CS = np.insert(CS, 0, 0)
-    m = (np.where(CS < r))[0]
-    nextState = m[len(m) - 1]
-    return nextState
+    cs = np.cumsum(vmultinomial)
+    cs = np.insert(cs, 0, 0)
+    m = (np.where(cs < r))[0]
+    return m[len(m) - 1]
 
 
 def transition_matrix(states):
     # The following determines the probabilities of going from one state to the next.
     # This is done by iterating over each combination of starting state and ending state to calculate the percentage of
     # times that the starting state leads to the ending state and updating the corresponding value in the
-    # transitionMatrix array.
-    matrixSize = 5
-    transitionMatrix = np.array(np.arange(matrixSize ** 2), dtype=float).reshape(matrixSize, matrixSize)
-    for stateStart in range(matrixSize):
-        for stateEnd in range(matrixSize):
+    # transitions array.
+    matrix_size = 5
+    transitions = np.array(np.arange(matrix_size ** 2), dtype=float).reshape(matrix_size, matrix_size)
+    for stateStart in range(matrix_size):
+        for stateEnd in range(matrix_size):
             start = 0
             end = 0
             for i in range(len(states) - 1):
@@ -50,12 +47,12 @@ def transition_matrix(states):
                     start += 1
                     if states[i + 1] == stateEnd:
                         end += 1
-            transitionMatrix[stateStart, stateEnd] = end / start
-    print(f'The transition matrix is:\n{transitionMatrix}\n')
-    return transitionMatrix
+            transitions[stateStart, stateEnd] = end / start
+    print(f'The transition matrix is:\n{transitions}\n')
+    return transitions
 
 
-def stationary_distribution(transitionMatrix):
+def stationary_distribution(transitions):
     # The following finds the stationary distribution of the markov chain.
     # The stationary distribution is found here by raising the transition matrix to the power of number of iterations.
     # This works because the stationary distribution is a vector "stationaryDistribution" which when multiplied with the
@@ -63,106 +60,114 @@ def stationary_distribution(transitionMatrix):
     # equilibrium state.
     # Once two consecutive stationary distributions are equal, the stationary distribution has been calculated.
     distribution = np.array([[1.0, 0.0, 0.0, 0.0, 0.0]])
-    stateHist = distribution
+    state_hist = distribution
     count = 0
     while True:
-        if (distribution == np.dot(distribution, transitionMatrix)).all():
+        if (distribution == np.dot(distribution, transitions)).all():
             print(f'Stationary distribution reached at {count} iterations:\n{distribution}\n')
             break
         count += 1
-        distribution = np.dot(distribution, transitionMatrix)
-        stateHist = np.append(stateHist, distribution, axis=0)
-        dfDistrHist = pd.DataFrame(stateHist)
-    dfDistrHist.plot(title='Stationary Distribution')
+        distribution = np.dot(distribution, transitions)
+        state_hist = np.append(state_hist, distribution, axis=0)
+        df_distr_hist = pd.DataFrame(state_hist)
+    # noinspection PyUnboundLocalVariable
+    df_distr_hist.plot(title='Stationary Distribution')
     plt.show()
 
 
-def simulate(transitionMatrix):
+def simulate(transitions):
     # The following simulates the markov chain to reconstruct the transition matrix and determine a distribution of
     # temps.
     # By dividing a line segment into intervals proportional to the probabilities in the transition matrix and then
     # generating a uniform random number between 0 and 1, an interval can be chosen.
     # Doing this is a good way to simulate a multinomial distribution and can be applied to markov chains as the
     # collection of moves from any given state form a multinomial distribution.
-    matrixSize = 5
-    stateChangeHist = np.array(np.arange(matrixSize ** 2), dtype=float).reshape(matrixSize, matrixSize)
-    stateChangeHist[stateChangeHist > 0.0] = 0.0
+    matrix_size = 5
+    state_change_hist = np.array(np.arange(matrix_size ** 2), dtype=float).reshape(matrix_size, matrix_size)
+    state_change_hist[state_change_hist > 0.0] = 0.0
     state = np.array([[1.0, 0.0, 0.0, 0.0, 0.0]])
-    currentState = 0
-    stateHist = state
+    current_state = 0
+    state_hist = state
 
     distr_hist = [[0, 0, 0, 0, 0]]
 
     for x in range(50000):
-        currentRow = np.ma.masked_values((transitionMatrix[currentState]), 0.0)
-        nextState = simulate_multinomial(currentRow)
+        current_row = np.ma.masked_values((transitions[current_state]), 0.0)
+        next_state = simulate_multinomial(current_row)
         # Keep track of state changes
-        stateChangeHist[currentState, nextState] += 1
+        state_change_hist[current_state, next_state] += 1
         # Keep track of the state vector itself
         state = np.array([[0, 0, 0, 0, 0]])
-        state[0, nextState] = 1.0
+        state[0, next_state] = 1.0
         # Keep track of state history
-        stateHist = np.append(stateHist, state, axis=0)
-        currentState = nextState
+        state_hist = np.append(state_hist, state, axis=0)
+        current_state = next_state
         # calculate the actual distribution over the 5 states so far
-        totals = np.sum(stateHist, axis=0)
+        totals = np.sum(state_hist, axis=0)
         gt = np.sum(totals)
         distrib = np.reshape(totals / gt, (1, 5))
         distr_hist = np.append(distr_hist, distrib, axis=0)
+    # noinspection PyUnboundLocalVariable
     print(f'Distribution of temperatures:\n{distrib}\n')
 
-    P_hat = stateChangeHist / stateChangeHist.sum(axis=1)[:, None]
+    p_hat = state_change_hist / state_change_hist.sum(axis=1)[:, None]
     # Check estimated state transition probabilities based on history so far:
-    print(f'Reconstructed transition matrix after 50 000 iterations:\n{P_hat}\n')
-    dfDistrHist = pd.DataFrame(distr_hist)
+    print(f'Reconstructed transition matrix after 50 000 iterations:\n{p_hat}\n')
+    df_distr_hist = pd.DataFrame(distr_hist)
     # Plot the distribution as the simulation progresses over time
-    dfDistrHist.plot(title="Simulation History")
+    df_distr_hist.plot(title="Simulation History")
     plt.show()
 
 
-def month(transitionMatrix, states):
+def month(transitions, states):
     # Simulate a month of weather from a starting temperature, in this case 69 to simulate October 2021
-    month = []
-    currentState = 70 // 5 - 11
+    month_states = []
+    current_state = 70 // 5 - 11
     state = np.array([[0.0, 0.0, 0.0, 0.0, 0.0]])
-    month.append(currentState)
-    state[0, currentState] = 1.0
+    month_states.append(current_state)
+    state[0, current_state] = 1.0
     for i in range(30):
-        currentRow = np.ma.masked_values((transitionMatrix[currentState]), 0.0)
-        nextState = simulate_multinomial(currentRow)
+        current_row = np.ma.masked_values((transitions[current_state]), 0.0)
+        next_state = simulate_multinomial(current_row)
         state = np.array([[0, 0, 0, 0, 0]])
-        state[0, nextState] = 1.0
-        month.append(nextState)
+        state[0, next_state] = 1.0
+        month_states.append(next_state)
 
     correct = 0
     for i in range(len(states)):
-        if month[i] == states[i]:
+        if month_states[i] == states[i]:
             correct += 1
     return correct, len(states)
 
 
-# Data from October 2020
-states = get_data('https://api.weather.com/v1/location/KLGA:9:US/observations/historical.json?apiKey='
-                  'e1f10a1e78da46f5b10a1e78da96f525&units=e&startDate=20201001&endDate=20201031')
-transition_matrix = transition_matrix(states)
+def main():
+    # Data from the api endpoint of https://www.wunderground.com/history/monthly/KLGA/date/2020-10 is being used
+    # The data has 923 weather data points from NYC LaGuardia airport over the month of October 2020 under JSON format
+    states = get_data('https://api.weather.com/v1/location/KLGA:9:US/observations/historical.json?apiKey='
+                      'e1f10a1e78da46f5b10a1e78da96f525&units=e&startDate=20201001&endDate=20201031')
+    transitions = transition_matrix(states)
 
-# Calculate stationary distribution and simulate the chain 50 000 times
-stationary_distribution(transition_matrix)
-simulate(transition_matrix)
+    # Calculate stationary distribution and simulate the chain 50 000 times
+    stationary_distribution(transition_matrix)
+    simulate(transitions)
 
-# Find the average accuracy for October 2020 over 100 iterations
-correct, total = (0, 0)
-for i in range(10000):
-    accuracy = month(transition_matrix, states)
-    correct += accuracy[0]
-    total += accuracy[1]
-print(f'Accuracy of {correct / total * 100}% for October 2020')
+    # Find the average accuracy for October 2020 over 100 iterations
+    correct, total = (0, 0)
+    for i in range(10000):
+        accuracy = month(transitions, states)
+        correct += accuracy[0]
+        total += accuracy[1]
+    print(f'Accuracy of {correct / total * 100}% for October 2020')
 
-# Data from October 2021
-states = get_data('https://api.weather.com/v1/location/KLGA:9:US/observations/historical.json?apiKey='
-                  'e1f10a1e78da46f5b10a1e78da96f525&units=e&startDate=20211001&endDate=20211031')
-for i in range(10000):
-    accuracy = month(transition_matrix, states)
-    correct += accuracy[0]
-    total += accuracy[1]
-print(f'Accuracy of {correct / total * 100}% for October 2021')
+    # Data from October 2021
+    states = get_data('https://api.weather.com/v1/location/KLGA:9:US/observations/historical.json?apiKey='
+                      'e1f10a1e78da46f5b10a1e78da96f525&units=e&startDate=20211001&endDate=20211031')
+    for i in range(10000):
+        accuracy = month(transitions, states)
+        correct += accuracy[0]
+        total += accuracy[1]
+    print(f'Accuracy of {correct / total * 100}% for October 2021')
+
+
+if __name__ == '__main__':
+    main()
