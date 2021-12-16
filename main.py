@@ -152,7 +152,7 @@ simulate(transition_matrix)
 
 # Find the average accuracy for October 2020 over 100 iterations
 correct, total = (0, 0)
-for i in range(1000):
+for i in range(10000):
     accuracy = month(transition_matrix, states)
     correct += accuracy[0]
     total += accuracy[1]
