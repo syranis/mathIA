@@ -31,12 +31,11 @@ def simulate_multinomial(vmultinomial):
     return m[len(m) - 1]
 
 
-def transition_matrix(states):
+def transition_matrix(states, matrix_size):
     # The following determines the probabilities of going from one state to the next.
     # This is done by iterating over each combination of starting state and ending state to calculate the percentage of
     # times that the starting state leads to the ending state and updating the corresponding value in the
     # transitions array.
-    matrix_size = 5
     transitions = np.array(np.arange(matrix_size ** 2), dtype=float).reshape(matrix_size, matrix_size)
     for stateStart in range(matrix_size):
         for stateEnd in range(matrix_size):
@@ -59,7 +58,8 @@ def stationary_distribution(transitions):
     # transition matrix returns a vector which can be iteratively multiplied against the transition matrix to reach an
     # equilibrium state.
     # Once two consecutive stationary distributions are equal, the stationary distribution has been calculated.
-    distribution = np.array([[1.0, 0.0, 0.0, 0.0, 0.0]])
+    distribution = np.zeros((1, np.shape(transitions)[0]), dtype=float)
+    distribution[0][0] = 1.0
     state_hist = distribution
     count = 0
     while True:
@@ -82,14 +82,15 @@ def simulate(transitions):
     # generating a uniform random number between 0 and 1, an interval can be chosen.
     # Doing this is a good way to simulate a multinomial distribution and can be applied to markov chains as the
     # collection of moves from any given state form a multinomial distribution.
-    matrix_size = 5
-    state_change_hist = np.array(np.arange(matrix_size ** 2), dtype=float).reshape(matrix_size, matrix_size)
+    state_change_hist = np.array(np.arange(np.shape(transitions)[0] ** 2), dtype=float)\
+                        .reshape(np.shape(transitions)[0], np.shape(transitions)[0])
     state_change_hist[state_change_hist > 0.0] = 0.0
-    state = np.array([[1.0, 0.0, 0.0, 0.0, 0.0]])
+    state = np.zeros((1, np.shape(transitions)[0]), dtype=float)
+    state[0][0] = 1
     current_state = 0
     state_hist = state
 
-    distr_hist = [[0, 0, 0, 0, 0]]
+    distr_hist = np.zeros((1, np.shape(transitions)[0]), dtype=int)
 
     for x in range(50000):
         current_row = np.ma.masked_values((transitions[current_state]), 0.0)
@@ -97,15 +98,15 @@ def simulate(transitions):
         # Keep track of state changes
         state_change_hist[current_state, next_state] += 1
         # Keep track of the state vector itself
-        state = np.array([[0, 0, 0, 0, 0]])
+        state = np.zeros((1, np.shape(transitions)[0]), dtype=int)
         state[0, next_state] = 1.0
         # Keep track of state history
         state_hist = np.append(state_hist, state, axis=0)
         current_state = next_state
-        # calculate the actual distribution over the 5 states so far
+        # calculate the actual distribution over the states so far
         totals = np.sum(state_hist, axis=0)
         gt = np.sum(totals)
-        distrib = np.reshape(totals / gt, (1, 5))
+        distrib = np.reshape(totals / gt, (1, np.shape(transitions)[0]))
         distr_hist = np.append(distr_hist, distrib, axis=0)
     # noinspection PyUnboundLocalVariable
     print(f'Distribution of temperatures:\n{distrib}\n')
@@ -145,7 +146,7 @@ def main():
     # The data has 923 weather data points from NYC LaGuardia airport over the month of October 2020 under JSON format
     states = get_data('https://api.weather.com/v1/location/KLGA:9:US/observations/historical.json?apiKey='
                       'e1f10a1e78da46f5b10a1e78da96f525&units=e&startDate=20201001&endDate=20201031')
-    transitions = transition_matrix(states)
+    transitions = transition_matrix(states, 5)
 
     # Calculate stationary distribution and simulate the chain 50 000 times
     stationary_distribution(transitions)
