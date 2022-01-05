@@ -121,7 +121,7 @@ def simulate(transitions):
 
 
 def month(transitions, states):
-    # Simulate a month of weather from a starting temperature, in this case 69 to simulate October 2021
+    # Simulate a month of weather from a starting temperature, in this case, 69, to simulate October 2021
     month_states = []
     current_state = states[0]
     state = np.array([[0.0, 0.0, 0.0, 0.0, 0.0]])
