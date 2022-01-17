@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 import requests
 import matplotlib.pyplot as plt
+import datetime
 
 
-def get_data(link):
+def get_data(link, state_offset):
     url = link
     r = requests.get(url=url).json()
 
@@ -19,7 +20,7 @@ def get_data(link):
     # This is done by dividing each value by five and both rounding down and subtracting 11, giving 5 values from 0 to 4
     states = []
     for i in range(len(temps) - 1):
-        states.append(temps[i] // 5 - 11)
+        states.append(temps[i] // 5 - state_offset)
     return states
 
 
@@ -145,7 +146,7 @@ def main():
     # Data from the api endpoint of https://www.wunderground.com/history/monthly/KLGA/date/2020-10 is being used
     # The data has 923 weather data points from NYC LaGuardia airport over the month of October 2020 under JSON format
     states = get_data('https://api.weather.com/v1/location/KLGA:9:US/observations/historical.json?apiKey='
-                      'e1f10a1e78da46f5b10a1e78da96f525&units=e&startDate=20201001&endDate=20201031')
+                      'e1f10a1e78da46f5b10a1e78da96f525&units=e&startDate=20201001&endDate=20201031', 11)
     transitions = transition_matrix(states, 5)
 
     # Calculate stationary distribution and simulate the chain 50 000 times
@@ -162,7 +163,7 @@ def main():
 
     # Data from October 2021
     states = get_data('https://api.weather.com/v1/location/KLGA:9:US/observations/historical.json?apiKey='
-                      'e1f10a1e78da46f5b10a1e78da96f525&units=e&startDate=20211001&endDate=20211031')
+                      'e1f10a1e78da46f5b10a1e78da96f525&units=e&startDate=20211001&endDate=20211031', 11)
     for i in range(10000):
         accuracy = month(transitions, states)
         correct += accuracy[0]
